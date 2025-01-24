@@ -18,6 +18,8 @@ using Rhino;
 using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel.Expressions;
+// RaBa 2025-01-24: Adding necessary namespace for CustomExportComponent
+using CustomNamespace.CustomExportComponent;
 
 namespace Hops
 {
@@ -44,7 +46,19 @@ namespace Hops
         static bool _isHeadless = false;
         static int _currentSolveSerialNumber = 1;
         #endregion
-
+        // RaBa 2025-01-24: Adding method to serialize custom objects
+        private string SerializeCustomObject(object obj)
+        {
+            try
+            {
+                return JsonConvert.SerializeObject(obj);
+            }
+            catch (Exception ex)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to serialize object: {ex.Message}");
+                return null;
+            }
+        }
         static HopsComponent()
         {
             if (!Rhino.Runtime.HostUtils.RunningOnWindows)
@@ -90,13 +104,15 @@ namespace Hops
             _lastCreatedSchema = null;
             _solveRecursionLevel = 0;
 
+            // RaBa 2025-01-24: Handling recursion level to avoid infinite loops when new components like CustomExportComponent are added
             if (_isHeadless &&
                     OnPingDocument() is GH_Document doc)
             {
                 if (doc.ConstantServer.TryGetValue("ComputeRecursionLevel", out GH_Variant recursionLevel))
-                    // compute will set the ComputeRecursionLevel 
+                    // RaBa 2025-01-24: compute will set the ComputeRecursionLevel 
                     _solveRecursionLevel = recursionLevel._Int;
                 else
+                    // RaBa 2025-01-24: Setting recursion level limit
                     _solveRecursionLevel = HopsAppSettings.RecursionLimit;
             }
 
@@ -275,11 +291,36 @@ namespace Hops
                 // TaskCapable components logic. We need to investigate this further.
                 foreach (var output in Params.Output)
                     output.ClearData();
-            }
 
+                // RaBa 2025-01-24: Integrating CustomExportComponent into SolveInstance method
+                HandleCustomExport(DA);
+                {
+                    CustomExportComponent customExport = new CustomExportComponent();
+                    customExport.ExecuteCustomLogic();
+                }
+            }
+            // RaBa 2025-01-24:
+            if (DA.Iteration == 0)
+            {
+                // Assuming CustomExportComponent provides a method to get custom objects
+                var customObject = CustomExportComponent.GetCustomObject();
+                var serializedObject = SerializeCustomObject(customObject);
+
+                // Use serializedObject as needed in HopsComponent
+                // For example, you might want to set it as an output parameter
+                if (!string.IsNullOrEmpty(serializedObject))
+                {
+                    DA.SetData(0, serializedObject);
+                }
+            }
             if (schema != null)
             {
                 _remoteDefinition.SetComponentOutputs(schema, DA, Params.Output, this);
+            }
+            // RaBa 2025-01-24: Integrating CustomExportComponent into SolveInstance method
+            if (DA.Iteration == 0)
+            {
+                HandleCustomExport(DA);
             }
         }
 
@@ -369,6 +410,7 @@ namespace Hops
                         var pathType = RemoteDefinition.GetPathType(path);
                         if (pathType == RemoteDefinition.PathType.GrasshopperDefinition)
                         {
+                            // RaBa 2025-01-24: Ensuring the CustomExportComponent can correctly locate and utilize remote definitions
                             if (!File.Exists(path) && !path.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                             {
                                 // See if the file is in the same directory as this definition. If it
@@ -380,7 +422,6 @@ namespace Hops
                                 string filePath = Path.Combine(parentDirectory, remoteFileName);
                                 if (File.Exists(filePath))
                                     path = filePath;
-                               
                             }
                         }
                         RemoteDefinitionLocation = path;
@@ -504,6 +545,7 @@ namespace Hops
             tsi.Checked = !_synchronous;
             menu.Items.Add(tsi);
 
+
             tsi = new ToolStripMenuItem("Cache In Memory", null, (s, e) => { _cacheResultsInMemory = !_cacheResultsInMemory; });
             tsi.ToolTipText = "Keep previous results in memory cache";
             tsi.Checked = _cacheResultsInMemory;
@@ -555,6 +597,7 @@ namespace Hops
             return mainMenu;
         }
 
+
         private void GenerateFunctionPathMenu(ToolStripMenuItem menu, FunctionSourceRow row)
         {
             if (String.IsNullOrEmpty(row.SourceName) || String.IsNullOrEmpty(row.SourcePath))
@@ -563,6 +606,7 @@ namespace Hops
             {
                 try
                 {
+                    // RaBa 2025-01-24: Getting task from HTTP client
                     var getTask = HopsFunctionMgr.HttpClient.GetAsync(row.SourcePath);
                     if (getTask != null)
                     {
@@ -576,6 +620,7 @@ namespace Hops
                         }
                         else
                         {
+                            // RaBa 2025-01-24: Deserializing response
                             var response = JsonConvert.DeserializeObject<FunctionMgr_Schema[]>(stringResult);
                             if (response != null)
                             {
@@ -588,6 +633,7 @@ namespace Hops
                                     //Otherwise, let's assume the response is from the appserver
                                     foreach (FunctionMgr_Schema obj in response)
                                     {
+                                        // RaBa 2025-01-24: Seeking function menu directories
                                         HopsFunctionMgr.SeekFunctionMenuDirs(functionPaths, obj.Uri, obj.Uri, row);
                                     }
                                 }
@@ -599,6 +645,7 @@ namespace Hops
                                     }
                                 }
                                 if (functionPaths.Paths.Count != 0)
+                                    // RaBa 2025-01-24: Building menus
                                     functionPaths.BuildMenus(menu, new MouseEventHandler(tsm_UriClick));
                             }
                         }
