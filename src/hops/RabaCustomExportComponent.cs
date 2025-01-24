@@ -2,7 +2,8 @@ using System;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Hops
+namespace CustomExportNamespace
+
 {
     public class RabaCustomExportComponent : GH_Component
     {

@@ -19,7 +19,7 @@ using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel.Expressions;
 // RaBa 2025-01-24: Adding necessary namespace for RabaCustomExportComponent
-using CustomNamespace.RabaCustomExportComponent;
+using CustomExportNamespace.RabaCustomExportComponent;
 
 namespace Hops
 {
