@@ -18,8 +18,8 @@ using Rhino;
 using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel.Expressions;
-// RaBa 2025-01-24: Adding necessary namespace for CustomExportComponent
-using CustomNamespace.CustomExportComponent;
+// RaBa 2025-01-24: Adding necessary namespace for RabaCustomExportComponent
+using CustomNamespace.RabaCustomExportComponent;
 
 namespace Hops
 {
@@ -295,15 +295,15 @@ namespace Hops
                 // RaBa 2025-01-24: Integrating CustomExportComponent into SolveInstance method
                 HandleCustomExport(DA);
                 {
-                    CustomExportComponent customExport = new CustomExportComponent();
+                    RabaCustomExportComponent customExport = new RabaCustomExportComponent();
                     customExport.ExecuteCustomLogic();
                 }
             }
             // RaBa 2025-01-24:
             if (DA.Iteration == 0)
             {
-                // Assuming CustomExportComponent provides a method to get custom objects
-                var customObject = CustomExportComponent.GetCustomObject();
+                // Assuming RabaCustomExportComponent provides a method to get custom objects
+                var customObject = RabaCustomExportComponent.GetCustomObject();
                 var serializedObject = SerializeCustomObject(customObject);
 
                 // Use serializedObject as needed in HopsComponent
@@ -317,7 +317,7 @@ namespace Hops
             {
                 _remoteDefinition.SetComponentOutputs(schema, DA, Params.Output, this);
             }
-            // RaBa 2025-01-24: Integrating CustomExportComponent into SolveInstance method
+            // RaBa 2025-01-24: Integrating RabaCustomExportComponent into SolveInstance method
             if (DA.Iteration == 0)
             {
                 HandleCustomExport(DA);
@@ -410,7 +410,7 @@ namespace Hops
                         var pathType = RemoteDefinition.GetPathType(path);
                         if (pathType == RemoteDefinition.PathType.GrasshopperDefinition)
                         {
-                            // RaBa 2025-01-24: Ensuring the CustomExportComponent can correctly locate and utilize remote definitions
+                            // RaBa 2025-01-24: Ensuring the RabaCustomExportComponent can correctly locate and utilize remote definitions
                             if (!File.Exists(path) && !path.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                             {
                                 // See if the file is in the same directory as this definition. If it
