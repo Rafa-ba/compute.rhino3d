@@ -31,7 +31,7 @@ namespace Hops
     {
         public override bool CanConvert(Type objectType)
         {
-            return true;
+            return objectType.FullName.StartsWith("IronPython.") || objectType.IsClass;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
@@ -41,6 +41,21 @@ namespace Hops
                 writer.WriteStartObject();
                 writer.WritePropertyName("__class__");
                 writer.WriteValue(value.GetType().FullName);
+
+                foreach (var prop in value.GetType().GetProperties())
+                {
+                    writer.WritePropertyName(prop.Name);
+                    var propValue = prop.GetValue(value);
+                    if (propValue != null && propValue.GetType().FullName.StartsWith("IronPython."))
+                    {
+                        serializer.Serialize(writer, propValue, typeof(object));
+                    }
+                    else
+                    {
+                        serializer.Serialize(writer, propValue);
+                    }
+                }
+
                 writer.WriteEndObject();
             }
             else if (value.GetType().IsClass && !value.GetType().Namespace.StartsWith("System"))
@@ -48,11 +63,13 @@ namespace Hops
                 writer.WriteStartObject();
                 writer.WritePropertyName("Type");
                 writer.WriteValue(value.GetType().FullName);
+
                 foreach (var prop in value.GetType().GetProperties())
                 {
                     writer.WritePropertyName(prop.Name);
                     serializer.Serialize(writer, prop.GetValue(value));
                 }
+
                 writer.WriteEndObject();
             }
             else
