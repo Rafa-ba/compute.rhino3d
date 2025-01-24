@@ -36,7 +36,7 @@ namespace CustomExportNamespace
             DA.SetData(0, serialized);
         }
 
-        private string SerializeCustomObject(object obj)
+        public string SerializeCustomObject(object obj)
         {
             try
             {

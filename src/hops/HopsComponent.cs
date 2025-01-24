@@ -303,43 +303,29 @@ namespace Hops
                     schema = null;
             }
             
-            if (DA.Iteration == 0)
-            {
-                // TODO: Having to clear the output data seems like a bug in the
-                // TaskCapable components logic. We need to investigate this further.
-                foreach (var output in Params.Output)
-                    output.ClearData();
-
-                // RaBa 2025-01-24: Integrating CustomExportComponent into SolveInstance method
-                HandleCustomExport(DA);
-                {
-                    RabaCustomExportComponent customExport = new RabaCustomExportComponent();
-                    customExport.ExecuteCustomLogic();
-                }
-            }
             // RaBa 2025-01-24:
             if (DA.Iteration == 0)
             {
-                // Assuming RabaCustomExportComponent provides a method to get custom objects
-                var customObject = RabaCustomExportComponent.GetCustomObject();
-                var serializedObject = SerializeCustomObject(customObject);
-
-                // Use serializedObject as needed in HopsComponent
-                // For example, you might want to set it as an output parameter
-                if (!string.IsNullOrEmpty(serializedObject))
+                object customObject = null;
+                if (DA.GetData("customObj", ref customObject))
                 {
-                    DA.SetData(0, serializedObject);
+                    string serializedObject = RabaCustomExportComponent.SerializeCustomObject(customObject);
+
+                    // Use serializedObject as needed in HopsComponent
+                    // For example, you might want to set it as an output parameter
+                    if (!string.IsNullOrEmpty(serializedObject))
+                    {
+                        DA.SetData(0, serializedObject);
+                    }
                 }
             }
+
+
             if (schema != null)
             {
                 _remoteDefinition.SetComponentOutputs(schema, DA, Params.Output, this);
             }
-            // RaBa 2025-01-24: Integrating RabaCustomExportComponent into SolveInstance method
-            if (DA.Iteration == 0)
-            {
-                HandleCustomExport(DA);
-            }
+
         }
 
         const string TagVersion = "RemoteSolveVersion";
