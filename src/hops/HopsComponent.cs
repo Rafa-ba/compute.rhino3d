@@ -19,7 +19,7 @@ using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel.Expressions;
 // RaBa 2025-01-24: Adding necessary namespace for RabaCustomExportComponent
-using CustomExportNamespace.RabaCustomExportComponent;
+using static CustomExportNamespace.RabaCustomExportComponent;
 
 namespace Hops
 {
@@ -46,7 +46,22 @@ namespace Hops
         static bool _isHeadless = false;
         static int _currentSolveSerialNumber = 1;
         #endregion
-        // RaBa 2025-01-24: Adding method to serialize custom objects
+
+        // RaBa 2025-01-24
+        private void HandleCustomExport(IGH_DataAccess DA)
+        {
+            RabaCustomExportComponent customExport = new RabaCustomExportComponent();
+            customExport.ExecuteCustomLogic();
+            var customObject = RabaCustomExportComponent.GetCustomObject();
+            var serializedObject = SerializeCustomObject(customObject);
+
+            // Use serializedObject as needed in HopsComponent
+            if (!string.IsNullOrEmpty(serializedObject))
+            {
+                DA.SetData(0, serializedObject);
+            }
+        }
+        // RaBa 2025-01-24
         private string SerializeCustomObject(object obj)
         {
             try
