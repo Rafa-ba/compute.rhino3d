@@ -19,12 +19,54 @@ using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel.Expressions;
 using CustomExportNamespace; 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 // RaBa 2025-01-24: Adding necessary namespace for RabaCustomExportComponent
 using static CustomExportNamespace.RabaCustomExportComponent;
 
 namespace Hops
 {
     [Guid("C69BB52C-88BA-4640-B69F-188D111029E8")]
+    public class IronPythonObjectConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return true;
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            if (value.GetType().FullName.StartsWith("IronPython."))
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("__class__");
+                writer.WriteValue(value.GetType().FullName);
+                writer.WriteEndObject();
+            }
+            else if (value.GetType().IsClass && !value.GetType().Namespace.StartsWith("System"))
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("Type");
+                writer.WriteValue(value.GetType().FullName);
+                foreach (var prop in value.GetType().GetProperties())
+                {
+                    writer.WritePropertyName(prop.Name);
+                    serializer.Serialize(writer, prop.GetValue(value));
+                }
+                writer.WriteEndObject();
+            }
+            else
+            {
+                serializer.Serialize(writer, value);
+            }
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class HopsComponent : GH_TaskCapableComponent<Schema>, IGH_VariableParameterComponent
     {
         #region Fields
@@ -64,11 +106,16 @@ namespace Hops
             }
         }
 
+
         private string SerializeCustomObject(object obj)
         {
             try
             {
-                return JsonConvert.SerializeObject(obj);
+                JsonSerializerSettings settings = new JsonSerializerSettings
+                {
+                    Converters = new List<JsonConverter> { new IronPythonObjectConverter() }
+                };
+                return JsonConvert.SerializeObject(obj, settings);
             }
             catch (Exception ex)
             {
@@ -76,7 +123,7 @@ namespace Hops
                 return null;
             }
         }
-
+        
         static HopsComponent()
         {
             if (!Rhino.Runtime.HostUtils.RunningOnWindows)
@@ -306,10 +353,13 @@ namespace Hops
             // RaBa 2025-01-24:
             if (DA.Iteration == 0)
             {
+                // Assuming RabaCustomExportComponent provides a method to get custom objects
                 object customObject = null;
                 if (DA.GetData("customObj", ref customObject))
                 {
-                    string serializedObject = RabaCustomExportComponent.SerializeCustomObject(customObject);
+                    // Create an instance of RabaCustomExportComponent to call the non-static method
+                    var customExportComponent = new RabaCustomExportComponent();
+                    string serializedObject = customExportComponent.SerializeCustomObject(customObject);
 
                     // Use serializedObject as needed in HopsComponent
                     // For example, you might want to set it as an output parameter

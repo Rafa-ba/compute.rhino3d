@@ -14,7 +14,7 @@ namespace CustomExportNamespace
         {
         }
 
-        public override Guid ComponentGuid => new Guid("YOUR_GUID_HERE");
+        public override Guid ComponentGuid => GetType().GUID;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
