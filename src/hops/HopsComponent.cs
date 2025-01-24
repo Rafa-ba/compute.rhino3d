@@ -18,6 +18,7 @@ using Rhino;
 using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel.Expressions;
+using CustomExportNamespace; 
 // RaBa 2025-01-24: Adding necessary namespace for RabaCustomExportComponent
 using static CustomExportNamespace.RabaCustomExportComponent;
 
@@ -50,10 +51,11 @@ namespace Hops
         // RaBa 2025-01-24
         private void HandleCustomExport(IGH_DataAccess DA)
         {
-            RabaCustomExportComponent customExport = new RabaCustomExportComponent();
-            customExport.ExecuteCustomLogic();
-            var customObject = RabaCustomExportComponent.GetCustomObject();
-            var serializedObject = SerializeCustomObject(customObject);
+            object retrievedObj = null;
+            if (!DA.GetData("customObj", ref retrievedObj))
+                return;
+
+            var serializedObject = SerializeCustomObject(retrievedObj);
 
             // Use serializedObject as needed in HopsComponent
             if (!string.IsNullOrEmpty(serializedObject))
@@ -61,7 +63,7 @@ namespace Hops
                 DA.SetData(0, serializedObject);
             }
         }
-        // RaBa 2025-01-24
+
         private string SerializeCustomObject(object obj)
         {
             try
@@ -74,6 +76,7 @@ namespace Hops
                 return null;
             }
         }
+
         static HopsComponent()
         {
             if (!Rhino.Runtime.HostUtils.RunningOnWindows)

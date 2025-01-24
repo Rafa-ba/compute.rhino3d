@@ -2,15 +2,15 @@ using System;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
+
 namespace CustomExportNamespace
+
 
 {
     public class RabaCustomExportComponent : GH_Component
     {
         public RabaCustomExportComponent()
-          : base("Custom Export", "CustomExport",
-              "Export custom objects",
-              "Params", "Util")
+          : base("Custom Export", "CustomExport", "Export custom objects", "Params", "Util")
         {
         }
 
@@ -18,7 +18,7 @@ namespace CustomExportNamespace
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Custom Object", "CO", "Custom object to export", GH_ParamAccess.item);
+            pManager.AddGenericParameter("customObj", "CO", "Custom object to export", GH_ParamAccess.item);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -28,11 +28,11 @@ namespace CustomExportNamespace
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            object customObject = null;
-            if (!DA.GetData(0, ref customObject))
+            object retrievedObj = null;
+            if (!DA.GetData(0, ref retrievedObj))
                 return;
 
-            string serialized = SerializeCustomObject(customObject);
+            string serialized = SerializeCustomObject(retrievedObj);
             DA.SetData(0, serialized);
         }
 
